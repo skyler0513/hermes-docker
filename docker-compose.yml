@@ -1,0 +1,41 @@
+services:
+  hermes:
+    build:
+      context: .
+      network: host
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-docker.1ms.run/library/node:24-bookworm}
+        HERMES_AGENT_REF: ${HERMES_AGENT_REF:-main}
+        HERMES_INSTALL_URL: ${HERMES_INSTALL_URL:-https://res1.hermesagent.org.cn/install.sh}
+        HERMES_INSTALL_OPTIONAL_EXTRAS: ${HERMES_INSTALL_OPTIONAL_EXTRAS:-false}
+        HERMES_WEB_UI_VERSION: ${HERMES_WEB_UI_VERSION:-latest}
+        APT_MIRROR: ${APT_MIRROR:-https://mirrors.tuna.tsinghua.edu.cn/debian}
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
+        NODE_DISTURL: ${NODE_DISTURL:-https://npmmirror.com/mirrors/node}
+    image: local/hermes-agent-web-ui:portable
+    container_name: hermes-isolated
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ${HOME}/.hermes:/home/hermes/.hermes
+      - ${HOME}/.hermes-web-ui:/home/hermes/.hermes-web-ui
+      - ${HOME}/.agents/skills:/home/hermes/.agents/skills:ro
+      - ${HOME}/hermes-workspace:/workspace
+    environment:
+      HERMES_HOME: /home/hermes/.hermes
+      HERMES_WEB_UI_HOME: /home/hermes/.hermes-web-ui
+      HERMES_BIN: /usr/local/bin/hermes
+      HERMES_ACCEPT_HOOKS: "1"
+      HERMES_UID: ${HERMES_UID:-1000}
+      HERMES_GID: ${HERMES_GID:-1000}
+      HERMES_WORKSPACE: /workspace
+      HOME: /home/hermes
+      PORT: ${HERMES_WEB_UI_PORT:-8648}
+      UPSTREAM: ${HERMES_UPSTREAM:-http://127.0.0.1:8643}
+      PROFILE: ${PROFILE:-default}
+      HTTP_PROXY: ${HTTP_PROXY:-}
+      HTTPS_PROXY: ${HTTPS_PROXY:-}
+      ALL_PROXY: ${ALL_PROXY:-}
+      NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1,::1}
+    command: ["web"]

@@ -1,0 +1,7 @@
+.git/
+data/
+build-context/
+workspace/
+node_modules/
+*.log
+
