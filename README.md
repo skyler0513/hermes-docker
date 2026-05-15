@@ -1,18 +1,20 @@
 # Hermes Docker Web UI
 
-一键 Docker 部署 Hermes Agent + Hermes Web UI，默认适配国内网络，保留宿主机配置，开箱即用。
+One-command Docker deployment for Hermes Agent + Hermes Web UI, with China-friendly defaults, host-mounted configuration, and persistent Web UI authentication.
 
-这个项目适合已经在用 Hermes，或者想快速体验 Hermes Web UI、但不想在本机反复处理 Python / Node / 依赖 / 国内网络问题的人。
+Chinese documentation: [README.zh-CN.md](README.zh-CN.md)
 
-## 解决什么问题
+This project is for people who already use Hermes, or who want to try Hermes Web UI without repeatedly dealing with local Python, Node, dependency, and network setup issues.
 
-- 不污染本机 Python / Node 环境
-- 默认使用国内镜像，加速 Docker 构建
-- 挂载宿主机 `~/.hermes`，保留你已有的 Hermes 配置和模型
-- 挂载宿主机 `~/.hermes-web-ui`，保留 Web UI 数据和访问令牌
-- 自动生成并持久化 Web UI 访问令牌
-- 修复 API Server 缺少 `aiohttp` 导致 Web UI 无法聊天的问题
-- 修复 Web UI 自定义 provider 只显示单个模型的问题
+## What This Solves
+
+- Keeps Python and Node dependencies out of your host environment
+- Uses China-friendly mirrors by default for faster Docker builds
+- Mounts the host `~/.hermes` directory so your existing Hermes configuration and models are preserved
+- Mounts the host `~/.hermes-web-ui` directory so Web UI data and access tokens are preserved
+- Automatically generates and persists a Web UI access token
+- Installs `aiohttp`, which is required for the Hermes API Server used by Web UI chat
+- Patches Hermes Web UI so custom providers can expose all models from `custom_providers[].models`
 
 ## Quick Start
 
@@ -24,13 +26,13 @@ docker compose build --pull
 docker compose up -d
 ```
 
-查看 Web UI 访问令牌：
+Show the Web UI access token:
 
 ```bash
 cat ~/.hermes-web-ui/.token
 ```
 
-打开：
+Open:
 
 ```text
 http://localhost:8648
@@ -38,40 +40,40 @@ http://localhost:8648
 
 ## Why Docker?
 
-Hermes Agent 官方安装适合直接装在本机使用，但如果你希望环境更容易迁移、重装和隔离，Docker 会更方便。
+The official Hermes Agent installer is suitable for direct host installation. Docker is more convenient if you want the environment to be easier to move, rebuild, and isolate.
 
-这个镜像不会把你的个人配置打进镜像，而是直接挂载宿主机目录：
+This image does not bake personal configuration into the image. It mounts host directories instead:
 
 - `${HOME}/.hermes` -> `/home/hermes/.hermes`
 - `${HOME}/.hermes-web-ui` -> `/home/hermes/.hermes-web-ui`
-- `${HOME}/.agents/skills` -> `/home/hermes/.agents/skills`，只读挂载
+- `${HOME}/.agents/skills` -> `/home/hermes/.agents/skills`, mounted read-only
 - `${HOME}/hermes-workspace` -> `/workspace`
 
-这样你可以重建镜像、升级 Web UI 或换机器部署，而不需要把 API Key、模型配置、聊天数据写死在镜像里。
+This lets you rebuild the image, upgrade Web UI, or move to another machine without hardcoding API keys, model configuration, or chat data into the image.
 
 ## Who Is This For?
 
-适合你，如果你：
+Use this project if you:
 
-- 想用 Hermes Agent + Hermes Web UI，但不想手动处理依赖
-- 在国内网络下构建或安装 Hermes 经常失败
-- 已经有自己的 `~/.hermes/config.yaml`
-- 希望 Docker 容器直接使用宿主机上的 Hermes 配置
-- 需要通过 Web UI 使用多个自定义模型
-- 遇到过 Web UI 聊天无响应、API Server 没起来、模型列表显示不完整等问题
+- Want Hermes Agent + Hermes Web UI without manually installing dependencies
+- Often run into build or install failures under China mainland network conditions
+- Already have your own `~/.hermes/config.yaml`
+- Want the Docker container to use the Hermes configuration from your host machine
+- Need to use multiple custom models through Web UI
+- Have seen Web UI chat stop responding, the API Server fail to start, or the model list show only one custom-provider model
 
 ## What's Included
 
-镜像包含：
+The image includes:
 
-- Hermes Agent，中国大陆镜像安装器
+- Hermes Agent, installed through the China mainland mirror installer
 - `hermes-web-ui@latest`
-- API Server 运行所需的 `aiohttp`
-- Web UI 自定义 provider 模型展开补丁
-- 持久化 Web UI token 的入口脚本
-- 国内默认镜像源配置
+- `aiohttp`, required by the API Server
+- A Hermes Web UI patch that expands custom-provider model lists
+- An entrypoint script that persists the Web UI token
+- China-friendly default package mirrors
 
-默认使用的上游安装方式：
+Default upstream installation flow:
 
 ```bash
 curl -fsSL https://res1.hermesagent.org.cn/install.sh | bash
@@ -80,21 +82,21 @@ npm install -g hermes-web-ui@latest
 
 ## Web UI Token
 
-Web UI 默认开启访问令牌。
+Web UI authentication is enabled by default.
 
-如果你没有手动设置 `HERMES_WEB_UI_AUTH_TOKEN`，容器第一次启动时会自动生成 token，并保存到：
+If you do not set `HERMES_WEB_UI_AUTH_TOKEN` manually, the container generates a token on first startup and saves it to:
 
 ```text
 ~/.hermes-web-ui/.token
 ```
 
-查看 token：
+Show the token:
 
 ```bash
 cat ~/.hermes-web-ui/.token
 ```
 
-如果你想手动指定 token：
+Set a custom token:
 
 ```bash
 HERMES_WEB_UI_AUTH_TOKEN=your-token docker compose up -d
@@ -102,13 +104,13 @@ HERMES_WEB_UI_AUTH_TOKEN=your-token docker compose up -d
 
 ## Custom Provider Models
 
-Hermes 配置里的 `custom_providers[].models` 会被 Web UI 展开到模型列表里。
+Models defined under `custom_providers[].models` in the Hermes config are expanded into the Web UI model list.
 
-例如你的 `~/.hermes/config.yaml` 里配置了：
+For example, if `~/.hermes/config.yaml` contains:
 
 ```yaml
 custom_providers:
-  - name: tencent
+  - name: example-provider
     base_url: https://example.com/v1
     model: minimax-m2.7
     models:
@@ -119,11 +121,11 @@ custom_providers:
       kimi-k2.6: {}
 ```
 
-Web UI 会显示 `custom:tencent` 下的多个模型，而不是只显示 `model` 字段里的一个模型。
+Web UI will show multiple models under `custom:example-provider`, instead of showing only the single model from the `model` field.
 
 ## China Mirrors
 
-默认构建使用国内友好的镜像：
+The default build uses China-friendly mirrors:
 
 - Base image: `docker.1ms.run/library/node:24-bookworm`
 - Debian apt: `https://mirrors.tuna.tsinghua.edu.cn/debian`
@@ -131,7 +133,7 @@ Web UI 会显示 `custom:tencent` 下的多个模型，而不是只显示 `model
 - npm: `https://registry.npmmirror.com`
 - Node headers for `node-gyp`: `https://npmmirror.com/mirrors/node`
 
-你也可以切回官方源：
+You can switch back to official upstream sources:
 
 ```bash
 NODE_IMAGE=node:24-bookworm \
@@ -144,25 +146,25 @@ docker compose build --pull
 
 ## Configuration
 
-指定 Hermes Agent 分支或 tag：
+Use a specific Hermes Agent branch or tag:
 
 ```bash
 HERMES_AGENT_REF=main docker compose build --pull
 ```
 
-安装更重的可选 Python extras：
+Install heavier optional Python extras:
 
 ```bash
 HERMES_INSTALL_OPTIONAL_EXTRAS=true docker compose build --pull
 ```
 
-指定 Web UI 版本：
+Use a specific Web UI version:
 
 ```bash
 HERMES_WEB_UI_VERSION=0.5.24 docker compose build --pull
 ```
 
-指定另一个 Hermes 安装脚本：
+Use another Hermes installer URL:
 
 ```bash
 HERMES_INSTALL_URL=https://example.com/install.sh docker compose build --pull
@@ -170,9 +172,9 @@ HERMES_INSTALL_URL=https://example.com/install.sh docker compose build --pull
 
 ## Proxy
 
-容器使用 `network_mode: host`，因此宿主机上监听 `127.0.0.1` 的代理，在容器里也可以通过 `127.0.0.1` 访问。
+The container uses `network_mode: host`, so a proxy listening on `127.0.0.1` on the host is also reachable from the container through `127.0.0.1`.
 
-如果你的代理需要环境变量：
+If your proxy needs environment variables:
 
 ```bash
 HTTP_PROXY=http://127.0.0.1:7890 \
@@ -183,7 +185,7 @@ docker compose up -d
 
 ## UID / GID
 
-如果你的 Linux 用户不是 UID/GID 1000，可以显式传入宿主机用户 ID，避免挂载目录写入权限问题：
+If your Linux user is not UID/GID 1000, pass the host user ID explicitly to avoid write-permission issues on mounted directories:
 
 ```bash
 HERMES_UID=$(id -u) HERMES_GID=$(id -g) docker compose up -d
@@ -191,37 +193,37 @@ HERMES_UID=$(id -u) HERMES_GID=$(id -g) docker compose up -d
 
 ## Operations
 
-查看状态：
+Show service status:
 
 ```bash
 docker compose ps
 ```
 
-查看日志：
+Follow logs:
 
 ```bash
 docker compose logs -f
 ```
 
-进入容器：
+Enter the container:
 
 ```bash
 docker compose exec hermes bash
 ```
 
-查看 Hermes 版本：
+Show the Hermes version:
 
 ```bash
 docker compose exec hermes hermes --version
 ```
 
-检查 API Server：
+Check the API Server:
 
 ```bash
 curl http://127.0.0.1:8642/health
 ```
 
-停止：
+Stop the stack:
 
 ```bash
 docker compose down
@@ -229,6 +231,6 @@ docker compose down
 
 ## Notes
 
-`network_mode: host` 在 Linux 上原生可用，在 OrbStack 上也可用。Docker Desktop for macOS 对 host networking 的支持取决于 Docker Desktop 版本和设置。
+`network_mode: host` works natively on Linux and also works on OrbStack. Docker Desktop for macOS support depends on your Docker Desktop version and settings.
 
-这个项目会直接写入宿主机挂载的 `~/.hermes` 和 `~/.hermes-web-ui`。如果这些目录里已有重要数据，首次使用前建议先备份。
+This project writes directly to the mounted host directories `~/.hermes` and `~/.hermes-web-ui`. If these directories already contain important data, back them up before first use.
