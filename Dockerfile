@@ -38,12 +38,17 @@ RUN useradd -m -d /home/hermes -s /bin/bash hermes && \
     ln -sf /opt/hermes-agent/venv/bin/hermes /usr/local/bin/hermes && \
     test -x /usr/local/bin/hermes
 
+RUN /opt/hermes-agent/venv/bin/python -m pip install --no-cache-dir "aiohttp==3.13.3"
+
 RUN npm install -g --omit=dev --no-audit --no-fund "hermes-web-ui@${HERMES_WEB_UI_VERSION}" && \
     webui_root="$(npm root -g)/hermes-web-ui" && \
     mkdir -p /home/hermes/.hermes-web-ui/data && \
     rm -rf "$webui_root/dist/data" && \
     ln -s /home/hermes/.hermes-web-ui/data "$webui_root/dist/data" && \
     npm cache clean --force
+
+COPY patch-hermes-web-ui.js /tmp/patch-hermes-web-ui.js
+RUN node /tmp/patch-hermes-web-ui.js && rm -f /tmp/patch-hermes-web-ui.js
 
 RUN \
     mkdir -p /workspace && \

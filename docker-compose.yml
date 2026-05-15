@@ -38,4 +38,5 @@ services:
       HTTPS_PROXY: ${HTTPS_PROXY:-}
       ALL_PROXY: ${ALL_PROXY:-}
       NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1,::1}
+      AUTH_TOKEN: ${HERMES_WEB_UI_AUTH_TOKEN:-}
     command: ["web"]

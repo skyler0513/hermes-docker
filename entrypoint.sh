@@ -25,7 +25,12 @@ export PATH="/opt/hermes-agent/venv/bin:/usr/local/bin:$PATH"
 mkdir -p "$HERMES_HOME"/{cron,sessions,logs,hooks,memories,skills,skins,plans,workspace,home}
 mkdir -p "$HERMES_WEB_UI_HOME"/{data,logs}
 
-if [ -f "$HERMES_WEB_UI_HOME/.token" ] && [ -z "${AUTH_TOKEN:-}" ]; then
+if [ -z "${AUTH_TOKEN:-}" ] && [ ! -f "$HERMES_WEB_UI_HOME/.token" ]; then
+  umask 077
+  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))" > "$HERMES_WEB_UI_HOME/.token"
+fi
+
+if [ -z "${AUTH_TOKEN:-}" ] && [ -f "$HERMES_WEB_UI_HOME/.token" ]; then
   AUTH_TOKEN="$(tr -d '\r\n' < "$HERMES_WEB_UI_HOME/.token")"
   export AUTH_TOKEN
 fi
