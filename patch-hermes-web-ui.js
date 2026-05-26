@@ -16,19 +16,55 @@ const patterns = [
     replacement:
       'O=U?.models?.length?[...U.models]:Array.from(new Set([i.model,...Object.keys(i.models||{})]));if(!U&&i.api_key)try{let f=await q2(k,i.api_key);f.length>0&&(O=[...new Set([i.model,...Object.keys(i.models||{}),...f])])}catch{}',
   },
+  {
+    original:
+      'C=[r.model];if(r.api_key)try{let x=await YR(L,r.api_key);x.length>0&&(C=[...new Set([r.model,...x])])}catch{}',
+    replacement:
+      'C=Array.from(new Set([r.model,...Object.keys(r.models||{})]));if(r.api_key)try{let x=await YR(L,r.api_key);x.length>0&&(C=[...new Set([r.model,...Object.keys(r.models||{}),...x])])}catch{}',
+  },
+  {
+    original:
+      'function nY(I){let l="",G=[],c=I.model;typeof c=="object"&&c!==null?l=String(c.default||"").trim():typeof c=="string"&&(l=c.trim());let b=I.custom_providers;if(Array.isArray(b)){let Z=[];for(let d of b)if(d&&typeof d=="object"){let W=String(d.name||"").trim(),m=String(d.model||"").trim();W&&m&&Z.push({id:m,label:`${W}: ${m}`})}Z.length>0&&G.push({provider:"Custom",models:Z})}return{default:l,groups:G}}',
+    replacement:
+      'function nY(I){let l="",G=[],c=I.model;typeof c=="object"&&c!==null?l=String(c.default||"").trim():typeof c=="string"&&(l=c.trim());let b=I.custom_providers;if(Array.isArray(b)){let Z=[];for(let d of b)if(d&&typeof d=="object"){let W=String(d.name||"").trim(),m=String(d.model||"").trim();if(W){let a=[m,...Object.keys(d.models||{})].map(N=>String(N||"").trim()).filter(Boolean);for(let N of new Set(a))Z.push({id:N,label:`${W}: ${N}`})}}Z.length>0&&G.push({provider:"Custom",models:Z})}return{default:l,groups:G}}',
+  },
+  {
+    original:
+      'let F=UL(p.name),H=p.base_url.replace(/\\/+$/,""),o=[p.model].filter(Boolean);if(p.api_key){let i=await BL(l,H,p.api_key);i.length>0&&(o=[...new Set([...o,...i])])}return{providerKey:F,label:p.name,base_url:H,models:o,api_key:p.api_key||""}}));',
+    replacement:
+      'let F=UL(p.name),H=p.base_url.replace(/\\/+$/,""),o=[p.model,...Object.keys(p.models||{})].map(i=>String(i||"").trim()).filter(Boolean);if(p.api_key){let i=await BL(l,H,p.api_key);i.length>0&&(o=[...new Set([...o,...i])])}return{providerKey:F,label:p.name,base_url:H,models:o,api_key:p.api_key||""}}));',
+  },
+  {
+    original:
+      'function UY(I){let l="",G=[],c=I.model;typeof c=="object"&&c!==null?l=String(c.default||"").trim():typeof c=="string"&&(l=c.trim());let b=I.custom_providers;if(Array.isArray(b)){let Z=[];for(let d of b)if(d&&typeof d=="object"){let W=String(d.name||"").trim(),a=String(d.model||"").trim();W&&a&&Z.push({id:a,label:`${W}: ${a}`})}Z.length>0&&G.push({provider:"Custom",models:Z})}return{default:l,groups:G}}',
+    replacement:
+      'function UY(I){let l="",G=[],c=I.model;typeof c=="object"&&c!==null?l=String(c.default||"").trim():typeof c=="string"&&(l=c.trim());let b=I.custom_providers;if(Array.isArray(b)){let Z=[];for(let d of b)if(d&&typeof d=="object"){let W=String(d.name||"").trim(),a=String(d.model||"").trim();if(W){let m=[a,...Object.keys(d.models||{})].map(e=>String(e||"").trim()).filter(Boolean);for(let e of new Set(m))Z.push({id:e,label:`${W}: ${e}`})}}Z.length>0&&G.push({provider:"Custom",models:Z})}return{default:l,groups:G}}',
+  },
+  {
+    original:
+      'let p=Array.isArray(c.custom_providers)?c.custom_providers:[],F=await Promise.allSettled(p.map(async u=>{if(!u.base_url)return null;let X=qk(u.name),o=u.base_url.replace(/\\/+$/,""),i=[u.model].filter(Boolean);if(u.api_key){let r=await Pk(l,o,u.api_key);r.length>0&&(i=[...new Set([...i,...r])])}return{providerKey:X,label:u.name,base_url:o,models:i,api_key:u.api_key||""}}));',
+    replacement:
+      'let p=Array.isArray(c.custom_providers)?c.custom_providers:[],F=await Promise.allSettled(p.map(async u=>{if(!u.base_url)return null;let X=qk(u.name),o=u.base_url.replace(/\\/+$/,""),i=[u.model,...Object.keys(u.models||{})].map(r=>String(r||"").trim()).filter(Boolean);if(u.api_key){let r=await Pk(l,o,u.api_key);r.length>0&&(i=[...new Set([...i,...r])])}return{providerKey:X,label:u.name,base_url:o,models:i,api_key:u.api_key||""}}));',
+  },
 ];
+
+let matched = false;
 
 for (const { original, replacement } of patterns) {
   if (source.includes(original)) {
     source = source.replace(original, replacement);
-    fs.writeFileSync(path, source);
-    console.log("patched hermes-web-ui custom provider model expansion");
-    process.exit(0);
+    matched = true;
+    console.log("patched hermes-web-ui custom provider model expansion block");
+    continue;
   }
   if (source.includes(replacement)) {
-    console.log("hermes-web-ui custom provider model expansion already patched");
-    process.exit(0);
+    matched = true;
+    console.log("hermes-web-ui custom provider model expansion block already patched");
   }
 }
 
-throw new Error("hermes-web-ui custom provider model block was not found");
+if (!matched) {
+  throw new Error("hermes-web-ui custom provider model block was not found");
+}
+
+fs.writeFileSync(path, source);
