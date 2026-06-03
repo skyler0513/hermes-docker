@@ -20,7 +20,7 @@ fi
 export HOME=/home/hermes
 export HERMES_HOME
 export HERMES_BIN="${HERMES_BIN:-/usr/local/bin/hermes}"
-export PATH="/opt/hermes-agent/venv/bin:/usr/local/bin:$PATH"
+export PATH="/opt/hermes-agent/node_modules/.bin:$HERMES_HOME/node_modules/.bin:/opt/hermes-agent/venv/bin:/usr/local/bin:$PATH"
 
 mkdir -p "$HERMES_HOME"/{cron,sessions,logs,hooks,memories,skills,skins,plans,workspace,home}
 mkdir -p "$HERMES_WEB_UI_HOME"/{data,logs}

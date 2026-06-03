@@ -4,10 +4,9 @@ services:
       context: .
       network: host
       args:
-        NODE_IMAGE: ${NODE_IMAGE:-docker.1ms.run/library/node:24-bookworm}
+        NODE_IMAGE: ${NODE_IMAGE:-node:24-bookworm}
         HERMES_AGENT_REF: ${HERMES_AGENT_REF:-main}
-        HERMES_INSTALL_URL: ${HERMES_INSTALL_URL:-https://res1.hermesagent.org.cn/install.sh}
-        HERMES_INSTALL_OPTIONAL_EXTRAS: ${HERMES_INSTALL_OPTIONAL_EXTRAS:-false}
+        HERMES_INSTALL_URL: ${HERMES_INSTALL_URL:-https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh}
         HERMES_WEB_UI_VERSION: ${HERMES_WEB_UI_VERSION:-latest}
         APT_MIRROR: ${APT_MIRROR:-https://mirrors.tuna.tsinghua.edu.cn/debian}
         PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}

@@ -1,9 +1,8 @@
-ARG NODE_IMAGE=docker.1ms.run/library/node:24-bookworm
+ARG NODE_IMAGE=node:24-bookworm
 FROM ${NODE_IMAGE}
 
 ARG HERMES_AGENT_REF=main
-ARG HERMES_INSTALL_URL=https://res1.hermesagent.org.cn/install.sh
-ARG HERMES_INSTALL_OPTIONAL_EXTRAS=false
+ARG HERMES_INSTALL_URL=https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh
 ARG HERMES_WEB_UI_VERSION=latest
 ARG APT_MIRROR=https://mirrors.tuna.tsinghua.edu.cn/debian
 ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
@@ -18,7 +17,7 @@ ENV PIP_INDEX_URL=${PIP_INDEX_URL}
 ENV PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn
 ENV npm_config_registry=${NPM_REGISTRY}
 ENV npm_config_disturl=${NODE_DISTURL}
-ENV PATH="/opt/hermes-agent/venv/bin:/usr/local/bin:${PATH}"
+ENV PATH="/opt/hermes-agent/node_modules/.bin:/opt/hermes-agent/venv/bin:/usr/local/bin:${PATH}"
 
 RUN sed -i "s|http://deb.debian.org/debian|${APT_MIRROR}|g; s|http://deb.debian.org/debian-security|${APT_MIRROR}-security|g" /etc/apt/sources.list.d/debian.sources && \
     apt-get update && \
@@ -31,21 +30,23 @@ RUN sed -i "s|http://deb.debian.org/debian|${APT_MIRROR}|g; s|http://deb.debian.
 RUN useradd -m -d /home/hermes -s /bin/bash hermes && \
     mkdir -p /opt /home/hermes/.hermes && \
     curl --http1.1 -fsSL --retry 5 --retry-delay 3 --connect-timeout 30 "${HERMES_INSTALL_URL}" -o /tmp/install-hermes.sh && \
-    install_args="--skip-setup --branch ${HERMES_AGENT_REF} --dir /opt/hermes-agent" && \
-    if [ "${HERMES_INSTALL_OPTIONAL_EXTRAS}" = "true" ]; then install_args="$install_args --with-optional-extras"; fi && \
+    install_args="--skip-setup --non-interactive --branch ${HERMES_AGENT_REF} --dir /opt/hermes-agent" && \
     HOME=/home/hermes bash /tmp/install-hermes.sh $install_args && \
     rm -f /tmp/install-hermes.sh && \
     ln -sf /opt/hermes-agent/venv/bin/hermes /usr/local/bin/hermes && \
     test -x /usr/local/bin/hermes
 
-RUN /opt/hermes-agent/venv/bin/python -m pip install --no-cache-dir "aiohttp==3.13.3"
-
-RUN npm install -g --omit=dev --no-audit --no-fund "hermes-web-ui@${HERMES_WEB_UI_VERSION}" && \
+RUN npm install -g --omit=dev --no-audit --no-fund "hermes-web-ui@${HERMES_WEB_UI_VERSION}" || \
+    npm_config_registry=https://registry.npmjs.org npm install -g --omit=dev --no-audit --no-fund "hermes-web-ui@${HERMES_WEB_UI_VERSION}" && \
     webui_root="$(npm root -g)/hermes-web-ui" && \
     mkdir -p /home/hermes/.hermes-web-ui/data && \
     rm -rf "$webui_root/dist/data" && \
     ln -s /home/hermes/.hermes-web-ui/data "$webui_root/dist/data" && \
     npm cache clean --force
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends chromium && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY patch-hermes-web-ui.js /tmp/patch-hermes-web-ui.js
 RUN node /tmp/patch-hermes-web-ui.js && rm -f /tmp/patch-hermes-web-ui.js
